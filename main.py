@@ -2,7 +2,7 @@ from typing import List, Optional
 import os
 
 from fastapi import FastAPI
-from openai import AsyncOpenAI
+import openai
 from openai.types.beta.threads.run import RequiredAction, LastError
 from openai.types.beta.threads.run_submit_tool_outputs_params import ToolOutput
 from pydantic import BaseModel
@@ -13,7 +13,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",  # usato per eseguire con il server React
-        # Aggiungeremo anche l'URL di Vercel dopo il deploy
+        "https://nome-della-tua-app.vercel.app",  # dominio del frontend su Vercel
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -25,9 +25,7 @@ api_key = os.getenv("OPENAI_API_KEY")
 if not api_key:
     raise ValueError("La variabile d'ambiente OPENAI_API_KEY non è impostata.")
 
-client = AsyncOpenAI(
-    api_key=api_key,
-)
+openai.api_key = api_key
 assistant_id = "asst_XQorQYx6o6cTpnmbDYB7xudv"
 run_finished_states = ["completed", "failed", "cancelled", "expired", "requires_action"]
 
@@ -58,8 +56,8 @@ class CreateMessage(BaseModel):
 
 @app.post("/api/new")
 async def post_new():
-    thread = await client.beta.threads.create()
-    await client.beta.threads.messages.create(
+    thread = await openai.Threads.create()
+    await openai.Threads.Messages.create(
         thread_id=thread.id,
         content="Greet the user and tell it about yourself and ask it what it is looking for.",
         role="user",
@@ -67,7 +65,7 @@ async def post_new():
             "type": "hidden"
         }
     )
-    run = await client.beta.threads.runs.create(
+    run = await openai.Threads.Runs.create(
         thread_id=thread.id,
         assistant_id=assistant_id
     )
@@ -83,7 +81,7 @@ async def post_new():
 
 @app.get("/api/threads/{thread_id}/runs/{run_id}")
 async def get_run(thread_id: str, run_id: str):
-    run = await client.beta.threads.runs.retrieve(
+    run = await openai.Threads.Runs.retrieve(
         thread_id=thread_id,
         run_id=run_id
     )
@@ -99,7 +97,7 @@ async def get_run(thread_id: str, run_id: str):
 
 @app.post("/api/threads/{thread_id}/runs/{run_id}/tool")
 async def post_tool(thread_id: str, run_id: str, tool_outputs: List[ToolOutput]):
-    run = await client.beta.threads.runs.submit_tool_outputs(
+    run = await openai.Threads.Runs.submit_tool_outputs(
         run_id=run_id,
         thread_id=thread_id,
         tool_outputs=tool_outputs
@@ -115,7 +113,7 @@ async def post_tool(thread_id: str, run_id: str, tool_outputs: List[ToolOutput])
 
 @app.get("/api/threads/{thread_id}")
 async def get_thread(thread_id: str):
-    messages = await client.beta.threads.messages.list(
+    messages = await openai.Threads.Messages.list(
         thread_id=thread_id
     )
 
@@ -137,13 +135,13 @@ async def get_thread(thread_id: str):
 
 @app.post("/api/threads/{thread_id}")
 async def post_thread(thread_id: str, message: CreateMessage):
-    await client.beta.threads.messages.create(
+    await openai.Threads.Messages.create(
         thread_id=thread_id,
         content=message.content,
         role="user"
     )
 
-    run = await client.beta.threads.runs.create(
+    run = await openai.Threads.Runs.create(
         thread_id=thread_id,
         assistant_id=assistant_id
     )
