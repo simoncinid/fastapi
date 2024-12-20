@@ -94,6 +94,11 @@ async def get_run(thread_id: str, run_id: str):
         last_error=run.last_error
     )
 
+@app.get("/test")
+async def test_endpoint():
+    return {"message": "L'endpoint di test funziona correttamente"}
+
+
 
 @app.post("/api/threads/{thread_id}/runs/{run_id}/tool")
 async def post_tool(thread_id: str, run_id: str, tool_outputs: List[ToolOutput]):
