@@ -13,7 +13,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",  # usato per eseguire con il server React
-        "https://nome-della-tua-app.vercel.app",  # dominio del frontend su Vercel
+        "https://nickchatrath.vercel.app",  # dominio del frontend su Vercel
     ],
     allow_credentials=True,
     allow_methods=["*"],
